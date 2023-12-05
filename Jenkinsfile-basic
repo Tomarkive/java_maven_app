@@ -1,32 +1,12 @@
 pipeline {
     agent any
-    
-    environment {
-        DOCKER_IMAGE_NAME = 'your-docker-image-name'
-    }
 
     stages {
-        stage('Build Docker Image') {
+        stage('Build') {
             steps {
                 script {
-                    echo "Building the Docker image..."
-                    def dockerImage = docker.build(env.DOCKER_IMAGE_NAME, '-f path/to/Dockerfile .')
-
-                    // Tag the image for pushing to Docker Hub or another registry (optional)
-                    dockerImage.tag(env.DOCKER_IMAGE_NAME, 'latest')
-                }
-            }
-        }
-
-        stage('Run Docker Container') {
-            steps {
-                script {
-                    echo "Running the Docker container..."
-                    def dockerContainer = docker.image(env.DOCKER_IMAGE_NAME).run('-p 8080:80', '--name your-container-name')
-
-                    // Get the container's IP address
-                    def containerIpAddress = dockerContainer.get().inspect().get("NetworkSettings").get("IPAddress")
-                    echo "Container IP address: ${containerIpAddress}"
+                    echo "Building the application..."
+                    // Add any build commands here
                 }
             }
         }
@@ -35,7 +15,25 @@ pipeline {
             steps {
                 script {
                     echo "Testing the application..."
-                    // Add your test commands here
+                    // Add any test commands here
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "Building the Docker image..."
+                    def dockerImage = docker.build('your-docker-image-name', '-f path/to/Dockerfile .')
+                }
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    echo "Running the Docker container..."
+                    def dockerContainer = docker.image('your-docker-image-name').run('-p 8081:8081', '--name your-container-name')
                 }
             }
         }
@@ -46,7 +44,7 @@ pipeline {
                     echo "Deploying the application..."
                     echo "Job Name: $JOB_NAME"
                     echo "Build ID: $BUILD_ID"
-                    // Add your deployment commands here
+                    // Add any deployment commands here
                 }
             }
         }
@@ -56,8 +54,8 @@ pipeline {
         always {
             // Cleanup: Remove the container after the job
             script {
-                docker.image(env.DOCKER_IMAGE_NAME).stop()
-                docker.image(env.DOCKER_IMAGE_NAME).remove()
+                docker.image('your-docker-image-name').stop()
+                docker.image('your-docker-image-name').remove()
             }
         }
     }
