@@ -1,30 +1,63 @@
-#!/usr/bin/env groovy
-
 pipeline {
-    agent none
+    agent any
+    
+    environment {
+        DOCKER_IMAGE_NAME = 'your-docker-image-name'
+    }
+
     stages {
-        stage('build') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo "Building the application..."
-                    echo "$BUILD_ID"
+                    echo "Building the Docker image..."
+                    def dockerImage = docker.build(env.DOCKER_IMAGE_NAME, '-f path/to/Dockerfile .')
+
+                    // Tag the image for pushing to Docker Hub or another registry (optional)
+                    dockerImage.tag(env.DOCKER_IMAGE_NAME, 'latest')
                 }
             }
         }
-        stage('test') {
+
+        stage('Run Docker Container') {
+            steps {
+                script {
+                    echo "Running the Docker container..."
+                    def dockerContainer = docker.image(env.DOCKER_IMAGE_NAME).run('-p 8080:80', '--name your-container-name')
+
+                    // Get the container's IP address
+                    def containerIpAddress = dockerContainer.get().inspect().get("NetworkSettings").get("IPAddress")
+                    echo "Container IP address: ${containerIpAddress}"
+                }
+            }
+        }
+
+        stage('Test') {
             steps {
                 script {
                     echo "Testing the application..."
+                    // Add your test commands here
                 }
             }
         }
-        stage('deploy') {
+
+        stage('Deploy') {
             steps {
                 script {
                     echo "Deploying the application..."
-                    echo "$JOB_NAME"
-                    echo "$BUILD_ID"
+                    echo "Job Name: $JOB_NAME"
+                    echo "Build ID: $BUILD_ID"
+                    // Add your deployment commands here
                 }
+            }
+        }
+    }
+
+    post {
+        always {
+            // Cleanup: Remove the container after the job
+            script {
+                docker.image(env.DOCKER_IMAGE_NAME).stop()
+                docker.image(env.DOCKER_IMAGE_NAME).remove()
             }
         }
     }
